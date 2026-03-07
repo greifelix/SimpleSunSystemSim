@@ -26,5 +26,7 @@ The constant $a$ is the long half axis of the elipse and b the short half axis. 
 
 ## Disclaimer
 
-I inserted the coordinates and starting positions from ai for quick prototyping.
+- This does obviously not aim to be physically accurate
+- I will need to update the "planet speeds" they are probably not yet correct
+- I inserted the coordinates and starting positions with ai for quick prototyping.
 They are probably NOT correct. I need to double check in the futures
