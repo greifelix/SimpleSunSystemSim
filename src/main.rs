@@ -1,7 +1,9 @@
 use bevy::{
-    color::palettes::basic::{BLUE, GREEN, RED, SILVER},
+    color::palettes::basic::{RED, SILVER},
     prelude::*,
 };
+
+mod planets;
 
 fn main() {
     App::new()
@@ -14,7 +16,7 @@ fn main() {
 fn environment_setup(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0., 7.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0., 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -31,8 +33,21 @@ fn environment_setup(mut commands: Commands) {
 
 #[derive(Component)]
 struct Planet {
-    center: f32,
-    radius: f32,
+    focal: f32,
+    short_axis: f32,
+    long_axis: f32,
+    theta: f32,
+}
+
+impl Planet {
+    fn new(focal: f32, short_axis: f32, long_axis: f32, angle_start: f32) -> Self {
+        Self {
+            focal,
+            short_axis,
+            long_axis,
+            theta: angle_start,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -43,32 +58,24 @@ fn planet_setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    // Sun
     commands.spawn((
-        Mesh3d(meshes.add(Sphere::default())),
+        Mesh3d(meshes.add(Sphere::new(planets::scale_sun_radius(
+            planets::SUN_EXACT_RADIUS,
+        )))),
         MeshMaterial3d(materials.add(Color::from(RED))),
         Star,
-        Transform::from_translation(Vec3::new(0., 1., 0.)),
+        Transform::from_translation(Vec3::new(0.0, 2.0, 0.0)),
     ));
 
-    commands.spawn((
-        Mesh3d(meshes.add(Sphere::default())),
-        MeshMaterial3d(materials.add(Color::from(BLUE))),
-        Planet {
-            center: 0.,
-            radius: 4.,
-        },
-        Transform::from_translation(Vec3::new(0., 1., 0.)),
-    ));
-
-    commands.spawn((
-        Mesh3d(meshes.add(Sphere::default())),
-        MeshMaterial3d(materials.add(Color::from(GREEN))),
-        Planet {
-            center: 0.,
-            radius: 5.,
-        },
-        Transform::from_translation(Vec3::new(0., 1., 0.)),
-    ));
+    for p in planets::SOLAR_SYSTEM_PLANETS {
+        commands.spawn((
+            Mesh3d(meshes.add(Sphere::new(planets::scale_radius(p.exact_radius)))),
+            MeshMaterial3d(materials.add(p.color)),
+            Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start),
+            Transform::from_translation(Vec3::new(0.0, 2.0, 0.0)),
+        ));
+    }
 
     // ground plane
     commands.spawn((
@@ -77,16 +84,34 @@ fn planet_setup(
     ));
 }
 
-fn orbit(mut query: Query<(&mut Transform, &Planet)>, time: Res<Time>) {
-    let t = time.elapsed_secs();
-
+fn orbit(mut query: Query<(&mut Transform, &mut Planet)>, time: Res<Time>) {
+    let dt = time.delta_secs();
     let speed = 2.0;
 
-    for (mut transform, p) in &mut query {
-        let x = p.center + (t * speed).cos() * p.radius;
-        let z = p.center + (t * speed).sin() * p.radius;
+    for (mut transform, mut p) in &mut query {
+        // NOTE: This needs double checking
+        let radius = get_planet_radius(&p);
+        let h = p.short_axis / p.long_axis.sqrt();
+        let dtheta = (h / radius.powi(2)) * speed * dt;
+        p.theta += dtheta;
+
+        let (x, z) = get_planet_pos(&p);
 
         transform.translation.x = x;
         transform.translation.z = z;
     }
+}
+
+fn get_planet_radius(planet: &Planet) -> f32 {
+    let p = planet.short_axis.powi(2) / planet.long_axis;
+    let eps = planet.focal / planet.long_axis;
+    p / (1. + eps * planet.theta.cos())
+}
+
+fn get_planet_pos(planet: &Planet) -> (f32, f32) {
+    let r = get_planet_radius(planet);
+    let x = r * planet.theta.cos();
+    let z = r * planet.theta.sin();
+
+    (x, z)
 }
