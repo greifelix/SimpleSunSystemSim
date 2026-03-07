@@ -14,8 +14,8 @@ the planet positions by the laws of physics.
 
 $$
 \begin{aligned}
-x(\phi) = \frac{p}{1+\epsilon*cos(\phi)}cos(\phi)\\
-y(\phi) = \frac{p}{1+\epsilon*cos(\phi)}sin(\phi)
+x(\phi) = \frac{p}{1+\epsilon*\cos(\phi)}\cos(\phi)\\
+y(\phi) = \frac{p}{1+\epsilon*\cos(\phi)}\sin(\phi)
 \end{aligned}
 $$
 
