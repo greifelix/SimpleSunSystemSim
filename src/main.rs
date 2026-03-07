@@ -1,7 +1,4 @@
-use bevy::{
-    color::palettes::basic::{RED, SILVER},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 mod camera_helpers;
 mod constants;
@@ -61,12 +58,21 @@ fn environment_setup(mut commands: Commands) {
     commands.spawn((
         PointLight {
             shadows_enabled: true,
-            intensity: 10_000_000.,
-            range: 100.0,
-            shadow_depth_bias: 0.2,
+            intensity: 150_000.,
+
             ..default()
         },
-        Transform::from_xyz(8.0, 16.0, 8.0),
+        Transform::from_translation(constants::SUN_POSITION),
+    ));
+
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 1_000.0,
+            shadows_enabled: false,
+            affects_lightmapped_mesh_diffuse: false,
+            ..default()
+        },
+        Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -116,13 +122,20 @@ fn planet_setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
 ) {
     // Sun
+    let sun_texture = asset_server.load("2k_sun.jpg");
     commands.spawn((
         Mesh3d(meshes.add(Sphere::new(planets::scale_sun_radius(
             planets::SUN_EXACT_RADIUS,
         )))),
-        MeshMaterial3d(materials.add(Color::from(RED))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(sun_texture.clone()),
+            emissive: bevy::color::LinearRgba::rgb(5.0, 5.0, 5.0),
+            emissive_texture: Some(sun_texture),
+            ..default()
+        })),
         Star,
         Transform::from_translation(constants::SUN_POSITION),
     ));
@@ -130,7 +143,10 @@ fn planet_setup(
     for p in planets::SOLAR_SYSTEM_PLANETS {
         commands.spawn((
             Mesh3d(meshes.add(Sphere::new(planets::scale_radius(p.exact_radius)))),
-            MeshMaterial3d(materials.add(p.color)),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color_texture: Some(asset_server.load(p.texture)),
+                ..default()
+            })),
             Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start),
             Transform::from_translation(constants::SUN_POSITION),
         ));
@@ -138,8 +154,11 @@ fn planet_setup(
 
     // ground plane
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0).subdivisions(0))),
-        MeshMaterial3d(materials.add(Color::from(SILVER))),
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(200.0, 200.0).subdivisions(1))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(asset_server.load("2k_stars.jpg")),
+            ..default()
+        })),
     ));
 }
 

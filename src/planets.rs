@@ -1,5 +1,3 @@
-use bevy::prelude::Color;
-
 pub struct PlanetParams {
     pub _name: &'static str,
     pub focal: f32,
@@ -7,7 +5,7 @@ pub struct PlanetParams {
     pub long_axis: f32,
     pub angle_start: f32,
     pub exact_radius: f32,
-    pub color: Color,
+    pub texture: &'static str,
 }
 
 /// Scales the exact radius (in Earth radii)
@@ -31,7 +29,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 0.3871,
         angle_start: 0.0,
         exact_radius: 0.383,
-        color: Color::srgb(0.6, 0.6, 0.6), // Gray
+        texture: "2k_mercury.jpg",
     },
     PlanetParams {
         _name: "Venus",
@@ -40,7 +38,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 0.7233,
         angle_start: 1.2,
         exact_radius: 0.950,
-        color: Color::srgb(0.9, 0.8, 0.5), // Yellowish
+        texture: "2k_venus_surface.jpg",
     },
     PlanetParams {
         _name: "Earth",
@@ -49,7 +47,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 1.0000,
         angle_start: 2.5,
         exact_radius: 1.000,
-        color: Color::srgb(0.2, 0.4, 0.8), // Blue
+        texture: "2k_earth_daymap.jpg",
     },
     PlanetParams {
         _name: "Mars",
@@ -58,7 +56,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 1.5237,
         angle_start: 4.0,
         exact_radius: 0.532,
-        color: Color::srgb(0.8, 0.3, 0.2), // Red
+        texture: "2k_mars.jpg",
     },
     PlanetParams {
         _name: "Jupiter",
@@ -67,7 +65,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 5.2028,
         angle_start: 1.5,
         exact_radius: 10.973,
-        color: Color::srgb(0.8, 0.6, 0.4), // Orange/Brown
+        texture: "2k_jupiter.jpg",
     },
     PlanetParams {
         _name: "Saturn",
@@ -76,7 +74,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 9.5388,
         angle_start: 3.2,
         exact_radius: 9.140,
-        color: Color::srgb(0.9, 0.8, 0.6), // Pale Gold
+        texture: "2k_saturn.jpg",
     },
     PlanetParams {
         _name: "Uranus",
@@ -85,7 +83,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 19.1914,
         angle_start: 0.8,
         exact_radius: 3.981,
-        color: Color::srgb(0.5, 0.8, 0.9), // Light Blue
+        texture: "2k_uranus.jpg",
     },
     PlanetParams {
         _name: "Neptune",
@@ -94,6 +92,6 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 30.0689,
         angle_start: 5.1,
         exact_radius: 3.865,
-        color: Color::srgb(0.2, 0.2, 0.8), // Dark Blue
+        texture: "2k_neptune.jpg",
     },
 ];
