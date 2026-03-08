@@ -2,6 +2,7 @@ use std::f32;
 
 use crate::SimulationSpeed;
 use crate::constants_types;
+use bevy::core_pipeline::experimental::mip_generation::DepthPyramidDummyTexture;
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -15,6 +16,12 @@ pub struct Planet {
 
 #[derive(Component)]
 pub struct Star;
+
+#[derive(Component)]
+pub struct Moon;
+
+#[derive(Component)]
+pub struct Earth;
 
 impl Planet {
     pub fn new(
@@ -50,13 +57,9 @@ pub fn scale_radius(exact_radius: f32) -> f32 {
     exact_radius.powf(0.3) * 0.1
 }
 
-/// Scales the exact radius of the sun for visualization
-pub fn scale_sun_radius(exact_radius: f32) -> f32 {
-    exact_radius.powf(0.3) * 0.1
-}
-
 /// The exact radius of the Sun in Earth radii.
 pub const SUN_EXACT_RADIUS: f32 = 109.2;
+pub const MOON_RADIUS: f32 = 0.1 * 0.27270444200282534; // 0.1 for scaling
 
 pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
     PlanetParams {
@@ -141,6 +144,25 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
     },
 ];
 
+pub fn moon_setup(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+) {
+    let moon_texture = asset_server.load("2k_moon.jpg");
+    commands.spawn((
+        Mesh3d(meshes.add(Sphere::new(scale_radius(MOON_RADIUS)).mesh().uv(128, 64))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color_texture: Some(moon_texture),
+            ..default()
+        })),
+        Transform::from_translation(constants_types::SUN_POSITION)
+            .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
+        Moon,
+    ));
+}
+
 pub fn sun_setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -151,7 +173,7 @@ pub fn sun_setup(
     commands.spawn((
         Mesh3d(
             meshes.add(
-                Sphere::new(scale_sun_radius(SUN_EXACT_RADIUS))
+                Sphere::new(scale_radius(SUN_EXACT_RADIUS))
                     .mesh()
                     .uv(128, 64),
             ),
@@ -185,7 +207,7 @@ pub fn planet_setup(
     asset_server: Res<AssetServer>,
 ) {
     for (i, p) in SOLAR_SYSTEM_PLANETS.iter().enumerate() {
-        commands.spawn((
+        let mut x = commands.spawn((
             Mesh3d(meshes.add(Sphere::new(scale_radius(p.exact_radius)).mesh().uv(128, 64))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(asset_server.load(p.texture)),
@@ -197,7 +219,30 @@ pub fn planet_setup(
                     * Quat::from_rotation_x(-std::f32::consts::PI / 2.),
             ),
         ));
+
+        if p._name == "Earth" {
+            x.insert(Earth);
+        }
     }
+}
+
+pub fn moon_orbit(
+    mut moon_query: Single<(&mut Transform,), (With<Moon>, Without<Earth>)>,
+    earth_query: Single<(&Transform,), (With<Earth>, Without<Moon>)>,
+    time: Res<Time>,
+    speed: Res<SimulationSpeed>,
+    mut moon_theta: Local<f32>,
+) {
+    let moon_transform = &mut moon_query.0;
+    let earth_transform = earth_query.0;
+    let dt = time.delta_secs();
+
+    *moon_theta = (*moon_theta + dt * speed.0) % (2. * f32::consts::PI);
+
+    moon_transform.translation.x = earth_transform.translation.x
+        + scale_radius(constants_types::EARTH_MOON_DIST_AU) * (*moon_theta).cos();
+    moon_transform.translation.z = earth_transform.translation.z
+        + scale_radius(constants_types::EARTH_MOON_DIST_AU) * (*moon_theta).sin();
 }
 
 pub fn orbit(

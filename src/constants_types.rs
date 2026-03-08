@@ -7,6 +7,8 @@ pub const MIN_ZOOM_DISTANCE: f32 = 2.0;
 pub const MAX_ZOOM_DISTANCE: f32 = 50.0;
 pub const START_SIM_SPEED: f32 = 2.0;
 
+pub const EARTH_MOON_DIST_AU: f32 = 10_000. * 0.00257; // 10k for scaling
+
 #[derive(Resource)]
 pub struct SimulationSpeed(pub f32);
 
