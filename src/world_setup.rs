@@ -32,26 +32,20 @@ pub fn background_setup(
     asset_server: Res<AssetServer>,
 ) {
     let star_texture = asset_server.load("2k_stars_milky_way.jpg");
-    let plane_mesh = meshes.add(Plane3d::default().mesh().size(50.0, 50.0));
-    let plane_material = materials.add(StandardMaterial {
+    let space_mesh = meshes.add(Sphere::new(150.0).mesh().uv(128, 64));
+    let sky_material = materials.add(StandardMaterial {
         base_color_texture: Some(star_texture.clone()),
         emissive: bevy::color::LinearRgba::rgb(1.5, 1.5, 1.5),
         emissive_texture: Some(star_texture),
         reflectance: 0.0,
+        // unlit: true,
         ..default()
     });
 
-    for x in -2..2 {
-        for z in -2..2 {
-            let rotation_steps = (x as i32 * 3 + z as i32 * 7).rem_euclid(4);
-            let rotation =
-                Quat::from_rotation_y(rotation_steps as f32 * std::f32::consts::FRAC_PI_2);
-            commands.spawn((
-                Mesh3d(plane_mesh.clone()),
-                MeshMaterial3d(plane_material.clone()),
-                Transform::from_xyz((x as f32 * 50.0) + 25.0, 0.0, (z as f32 * 50.0) + 25.0)
-                    .with_rotation(rotation),
-            ));
-        }
-    }
+    commands.spawn((
+        Mesh3d(space_mesh),
+        MeshMaterial3d(sky_material),
+        // A negative scale on one axis flips the normals so the texture is visible from the inside
+        Transform::from_scale(Vec3::new(-1.0, 1.0, 1.0)),
+    ));
 }
