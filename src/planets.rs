@@ -138,7 +138,13 @@ pub fn sun_setup(
 ) {
     let sun_texture = asset_server.load("2k_sun.jpg");
     commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(scale_sun_radius(SUN_EXACT_RADIUS)))),
+        Mesh3d(
+            meshes.add(
+                Sphere::new(scale_sun_radius(SUN_EXACT_RADIUS))
+                    .mesh()
+                    .uv(128, 64),
+            ),
+        ),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(sun_texture.clone()),
             emissive: bevy::color::LinearRgba::rgb(5.0, 5.0, 5.0),
@@ -147,7 +153,8 @@ pub fn sun_setup(
             ..default()
         })),
         Star,
-        Transform::from_translation(constants::SUN_POSITION),
+        Transform::from_translation(constants::SUN_POSITION)
+            .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
     ));
 
     commands.spawn((
@@ -168,13 +175,14 @@ pub fn planet_setup(
 ) {
     for (i, p) in SOLAR_SYSTEM_PLANETS.iter().enumerate() {
         commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(scale_radius(p.exact_radius)))),
+            Mesh3d(meshes.add(Sphere::new(scale_radius(p.exact_radius)).mesh().uv(128, 64))),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color_texture: Some(asset_server.load(p.texture)),
                 ..default()
             })),
             Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start, i),
-            Transform::from_translation(constants::SUN_POSITION),
+            Transform::from_translation(constants::SUN_POSITION)
+                .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
         ));
     }
 }
