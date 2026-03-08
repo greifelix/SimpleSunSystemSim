@@ -1,3 +1,5 @@
+use std::f32;
+
 use crate::SimulationSpeed;
 use crate::constants_types;
 use bevy::prelude::*;
@@ -39,17 +41,18 @@ pub struct PlanetParams {
     pub long_axis: f32,
     pub angle_start: f32,
     pub exact_radius: f32,
+    pub inclination_angle: f32,
     pub texture: &'static str,
 }
 
 /// Scales the exact radius (in Earth radii)
 pub fn scale_radius(exact_radius: f32) -> f32 {
-    exact_radius.powf(0.3) * 0.15
+    exact_radius.powf(0.3) * 0.1
 }
 
 /// Scales the exact radius of the sun for visualization
 pub fn scale_sun_radius(exact_radius: f32) -> f32 {
-    exact_radius.powf(0.3) * 0.15
+    exact_radius.powf(0.3) * 0.1
 }
 
 /// The exact radius of the Sun in Earth radii.
@@ -63,6 +66,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 0.3871,
         angle_start: 0.0,
         exact_radius: 0.383,
+        inclination_angle: 0.034 * f32::consts::PI / 180.0,
         texture: "2k_mercury.jpg",
     },
     PlanetParams {
@@ -72,6 +76,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 0.7233,
         angle_start: 1.2,
         exact_radius: 0.950,
+        inclination_angle: 177.36 * f32::consts::PI / 180.0,
         texture: "2k_venus_surface.jpg",
     },
     PlanetParams {
@@ -81,6 +86,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 1.0000,
         angle_start: 2.5,
         exact_radius: 1.000,
+        inclination_angle: 23.44 * f32::consts::PI / 180.0,
         texture: "2k_earth_daymap.jpg",
     },
     PlanetParams {
@@ -90,6 +96,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 1.5237,
         angle_start: 4.0,
         exact_radius: 0.532,
+        inclination_angle: 25.19 * f32::consts::PI / 180.0,
         texture: "2k_mars.jpg",
     },
     PlanetParams {
@@ -99,6 +106,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 5.2028,
         angle_start: 1.5,
         exact_radius: 10.973,
+        inclination_angle: 3.13 * f32::consts::PI / 180.0,
         texture: "2k_jupiter.jpg",
     },
     PlanetParams {
@@ -108,6 +116,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 9.5388,
         angle_start: 3.2,
         exact_radius: 9.140,
+        inclination_angle: 26.73 * f32::consts::PI / 180.0,
         texture: "2k_saturn.jpg",
     },
     PlanetParams {
@@ -117,6 +126,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 19.1914,
         angle_start: 0.8,
         exact_radius: 3.981,
+        inclination_angle: 97.77 * f32::consts::PI / 180.0,
         texture: "2k_uranus.jpg",
     },
     PlanetParams {
@@ -126,6 +136,7 @@ pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
         long_axis: 30.0689,
         angle_start: 5.1,
         exact_radius: 3.865,
+        inclination_angle: 28.32 * f32::consts::PI / 180.0,
         texture: "2k_neptune.jpg",
     },
 ];
@@ -181,8 +192,10 @@ pub fn planet_setup(
                 ..default()
             })),
             Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start, i),
-            Transform::from_translation(constants_types::SUN_POSITION)
-                .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
+            Transform::from_translation(constants_types::SUN_POSITION).with_rotation(
+                Quat::from_rotation_x(p.inclination_angle)
+                    * Quat::from_rotation_x(-std::f32::consts::PI / 2.),
+            ),
         ));
     }
 }
@@ -195,26 +208,29 @@ pub fn orbit(
     let dt = time.delta_secs();
 
     for (mut transform, mut p) in &mut query {
-        let radius = get_planet_radius(&p);
+        let polar_radius = get_planet_polar_radius(&p);
         let h = p.short_axis / p.long_axis.sqrt();
-        let dtheta = (h / radius.powi(2)) * speed.0 * dt;
+        let dtheta = (h / polar_radius.powi(2)) * speed.0 * dt;
         p.theta += dtheta;
 
-        let (x, z) = get_planet_pos(&p);
+        let (x, z) = get_planet_cartesian_pos(&p);
 
         transform.translation.x = x;
         transform.translation.z = z;
     }
 }
 
-pub fn get_planet_radius(planet: &Planet) -> f32 {
+pub fn get_planet_polar_radius(planet: &Planet) -> f32 {
     let p = planet.short_axis.powi(2) / planet.long_axis;
     let eps = planet.focal / planet.long_axis;
-    p / (1. + eps * planet.theta.cos())
+    let polar_radius = p / (1. + eps * planet.theta.cos());
+
+    // Scale the radius such that distances are more managable
+    2. * polar_radius.powf(0.5)
 }
 
-pub fn get_planet_pos(planet: &Planet) -> (f32, f32) {
-    let r = get_planet_radius(planet);
+pub fn get_planet_cartesian_pos(planet: &Planet) -> (f32, f32) {
+    let r = get_planet_polar_radius(planet);
     let x = r * planet.theta.cos();
     let z = r * planet.theta.sin();
 
