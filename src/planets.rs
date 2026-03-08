@@ -1,5 +1,5 @@
 use crate::SimulationSpeed;
-use crate::constants;
+use crate::constants_types;
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -153,7 +153,7 @@ pub fn sun_setup(
             ..default()
         })),
         Star,
-        Transform::from_translation(constants::SUN_POSITION)
+        Transform::from_translation(constants_types::SUN_POSITION)
             .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
     ));
 
@@ -163,7 +163,7 @@ pub fn sun_setup(
             intensity: 100_000.,
             ..default()
         },
-        Transform::from_translation(constants::SUN_POSITION),
+        Transform::from_translation(constants_types::SUN_POSITION),
     ));
 }
 
@@ -181,7 +181,7 @@ pub fn planet_setup(
                 ..default()
             })),
             Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start, i),
-            Transform::from_translation(constants::SUN_POSITION)
+            Transform::from_translation(constants_types::SUN_POSITION)
                 .with_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
         ));
     }

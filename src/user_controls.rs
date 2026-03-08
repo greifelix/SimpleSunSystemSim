@@ -1,6 +1,6 @@
 use crate::ControlText;
 use crate::SimulationSpeed;
-use crate::constants::{MAX_ZOOM_DISTANCE, MIN_ZOOM_DISTANCE};
+use crate::constants_types::{MAX_ZOOM_DISTANCE, MIN_ZOOM_DISTANCE};
 use crate::planets::{Planet, SOLAR_SYSTEM_PLANETS};
 use bevy::prelude::*;
 
@@ -108,7 +108,7 @@ pub fn camera_zoomer(
     time: Res<Time>,
 ) {
     // Sun is default target for the camera
-    let mut target_pos = crate::constants::SUN_POSITION;
+    let mut target_pos = crate::constants_types::SUN_POSITION;
 
     // Change target in case a planet is selected
     if let Some(index) = target.planet_index {
