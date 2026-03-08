@@ -10,7 +10,10 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(SimulationSpeed::default())
-        .add_systems(Startup, (environment_setup, planet_setup))
+        .add_systems(
+            Startup,
+            (environment_setup, planet_setup, sun_setup, background_setup),
+        )
         .add_systems(Update, (orbit, camera_zoomer, update_simulation_speed))
         .run();
 }
@@ -55,25 +58,10 @@ fn environment_setup(mut commands: Commands) {
         Transform::from_xyz(0., 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 150_000.,
-
-            ..default()
-        },
-        Transform::from_translation(constants::SUN_POSITION),
-    ));
-
-    commands.spawn((
-        DirectionalLight {
-            illuminance: 1_000.0,
-            shadows_enabled: false,
-            affects_lightmapped_mesh_diffuse: false,
-            ..default()
-        },
-        Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
+    commands.insert_resource(GlobalAmbientLight {
+        brightness: 1000.0,
+        ..default()
+    });
 
     commands.spawn((
         Text::new("Controls:\nArrow Keys: Move/Rotate Camera\n+/-: Adjust Simulation Speed (Current: 2.0x)"),
@@ -118,13 +106,12 @@ fn update_simulation_speed(
     }
 }
 
-fn planet_setup(
+fn sun_setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     asset_server: Res<AssetServer>,
 ) {
-    // Sun
     let sun_texture = asset_server.load("2k_sun.jpg");
     commands.spawn((
         Mesh3d(meshes.add(Sphere::new(planets::scale_sun_radius(
@@ -134,12 +121,30 @@ fn planet_setup(
             base_color_texture: Some(sun_texture.clone()),
             emissive: bevy::color::LinearRgba::rgb(5.0, 5.0, 5.0),
             emissive_texture: Some(sun_texture),
+            reflectance: 0.0,
             ..default()
         })),
         Star,
         Transform::from_translation(constants::SUN_POSITION),
     ));
 
+    commands.spawn((
+        PointLight {
+            shadows_enabled: true,
+            intensity: 100_000.,
+
+            ..default()
+        },
+        Transform::from_translation(constants::SUN_POSITION),
+    ));
+}
+
+fn planet_setup(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+) {
     for p in planets::SOLAR_SYSTEM_PLANETS {
         commands.spawn((
             Mesh3d(meshes.add(Sphere::new(planets::scale_radius(p.exact_radius)))),
@@ -151,15 +156,37 @@ fn planet_setup(
             Transform::from_translation(constants::SUN_POSITION),
         ));
     }
+}
 
-    // ground plane
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(200.0, 200.0).subdivisions(1))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color_texture: Some(asset_server.load("2k_stars.jpg")),
-            ..default()
-        })),
-    ));
+fn background_setup(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+) {
+    let star_texture = asset_server.load("2k_stars_milky_way.jpg");
+    let plane_mesh = meshes.add(Plane3d::default().mesh().size(50.0, 50.0));
+    let plane_material = materials.add(StandardMaterial {
+        base_color_texture: Some(star_texture.clone()),
+        emissive: bevy::color::LinearRgba::rgb(1.5, 1.5, 1.5),
+        emissive_texture: Some(star_texture),
+        reflectance: 0.0,
+        ..default()
+    });
+
+    for x in -2..2 {
+        for z in -2..2 {
+            let rotation_steps = (x as i32 * 3 + z as i32 * 7).rem_euclid(4);
+            let rotation =
+                Quat::from_rotation_y(rotation_steps as f32 * std::f32::consts::FRAC_PI_2);
+            commands.spawn((
+                Mesh3d(plane_mesh.clone()),
+                MeshMaterial3d(plane_material.clone()),
+                Transform::from_xyz((x as f32 * 50.0) + 25.0, 0.0, (z as f32 * 50.0) + 25.0)
+                    .with_rotation(rotation),
+            ));
+        }
+    }
 }
 
 fn orbit(

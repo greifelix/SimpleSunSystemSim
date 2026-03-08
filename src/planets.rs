@@ -15,7 +15,7 @@ pub fn scale_radius(exact_radius: f32) -> f32 {
 
 /// Scales the exact radius of the sun for visualization
 pub fn scale_sun_radius(exact_radius: f32) -> f32 {
-    exact_radius.powf(0.1) * 0.15
+    exact_radius.powf(0.3) * 0.15
 }
 
 /// The exact radius of the Sun in Earth radii.
