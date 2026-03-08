@@ -10,7 +10,7 @@ use planets::{orbit, planet_setup, sun_setup};
 use user_controls::{CameraTarget, camera_zoomer, handle_simulation_speed, planet_selection};
 use world_setup::{background_setup, environment_setup};
 
-use crate::planets::{moon_orbit, moon_setup};
+use crate::planets::{earth_rotation, moon_orbit, moon_setup};
 
 fn main() {
     App::new()
@@ -32,6 +32,7 @@ fn main() {
             (
                 orbit,
                 moon_orbit,
+                earth_rotation,
                 camera_zoomer,
                 planet_selection,
                 handle_simulation_speed,

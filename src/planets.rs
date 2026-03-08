@@ -302,3 +302,18 @@ pub fn get_planet_cartesian_pos(planet: &Planet) -> (f32, f32) {
 
     (x, z)
 }
+
+pub fn earth_rotation(
+    mut earth_query: Single<&mut Transform, With<Earth>>,
+    time: Res<Time>,
+    speed: Res<SimulationSpeed>,
+    mut angle: Local<f32>,
+) {
+    let dt = time.delta_secs();
+    *angle = (*angle + dt * speed.0) % (2. * f32::consts::PI);
+    let inclination_angle = 23.44 * f32::consts::PI / 180.0;
+
+    earth_query.rotation = Quat::from_rotation_x(inclination_angle)
+        * Quat::from_rotation_x(-std::f32::consts::PI / 2.)
+        * Quat::from_rotation_z(*angle);
+}
