@@ -2,7 +2,7 @@ use std::f32;
 
 use crate::SimulationSpeed;
 use crate::constants_types;
-use bevy::core_pipeline::experimental::mip_generation::DepthPyramidDummyTexture;
+
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -222,6 +222,27 @@ pub fn planet_setup(
 
         if p._name == "Earth" {
             x.insert(Earth);
+        }
+
+        if p._name == "Saturn" {
+            let ring_texture = asset_server.load("2k_saturn_ring_alpha.png");
+            let inner_radius = 1.11 * scale_radius(p.exact_radius);
+            let outer_radius = 2.27 * scale_radius(p.exact_radius);
+
+            x.with_children(|parent| {
+                parent.spawn((
+                    Mesh3d(meshes.add(Extrusion::new(
+                        Annulus::new(inner_radius, outer_radius),
+                        0.001,
+                    ))),
+                    MeshMaterial3d(materials.add(StandardMaterial {
+                        base_color_texture: Some(ring_texture),
+                        alpha_mode: AlphaMode::Blend,
+                        cull_mode: None,
+                        ..default()
+                    })),
+                ));
+            });
         }
     }
 }
