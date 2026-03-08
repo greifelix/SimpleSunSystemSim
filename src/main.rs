@@ -1,50 +1,39 @@
 use bevy::prelude::*;
 
-mod camera_helpers;
 mod constants;
 mod planets;
+mod user_controls;
 
-use camera_helpers::camera_zoomer;
 use constants::START_SIM_SPEED;
+use planets::{orbit, planet_setup, sun_setup};
+use user_controls::{CameraTarget, camera_zoomer, handle_simulation_speed, planet_selection};
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(SimulationSpeed::default())
+        .insert_resource(CameraTarget::default())
         .add_systems(
             Startup,
             (environment_setup, planet_setup, sun_setup, background_setup),
         )
-        .add_systems(Update, (orbit, camera_zoomer, update_simulation_speed))
+        .add_systems(
+            Update,
+            (
+                orbit,
+                camera_zoomer,
+                planet_selection,
+                handle_simulation_speed,
+            ),
+        )
         .run();
 }
 
 #[derive(Resource)]
-struct SimulationSpeed(f32);
+pub struct SimulationSpeed(pub f32);
 
 #[derive(Component)]
-struct ControlText;
-
-#[derive(Component)]
-struct Planet {
-    focal: f32,
-    short_axis: f32,
-    long_axis: f32,
-    theta: f32,
-}
-
-#[derive(Component)]
-struct Star;
-
-impl Planet {
-    fn new(focal: f32, short_axis: f32, long_axis: f32, angle_start: f32) -> Self {
-        Self {
-            focal,
-            short_axis,
-            long_axis,
-            theta: angle_start,
-        }
-    }
-}
+pub struct ControlText;
 
 impl Default for SimulationSpeed {
     fn default() -> Self {
@@ -64,7 +53,7 @@ fn environment_setup(mut commands: Commands) {
     });
 
     commands.spawn((
-        Text::new("Controls:\nArrow Keys: Move/Rotate Camera\n+/-: Adjust Simulation Speed (Current: 2.0x)"),
+        Text::new("Controls:\nArrow Keys: Move/Rotate Camera\nSpace + L/R Arrow: Rotate Up/Down\n+/-: Adjust Simulation Speed (Current: 2.00x)\n0-8: Select Focus (0=Sun, 1-8=Planets)\nTarget: Sun"),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),
@@ -73,89 +62,6 @@ fn environment_setup(mut commands: Commands) {
         },
         ControlText
     ));
-}
-
-fn update_simulation_speed(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut speed: ResMut<SimulationSpeed>,
-    mut text_query: Query<&mut Text, With<ControlText>>,
-) {
-    let mut changed = false;
-    if keys.just_pressed(KeyCode::Equal)
-        || keys.just_pressed(KeyCode::NumpadAdd)
-        || keys.just_pressed(KeyCode::BracketRight)
-    {
-        speed.0 += 1.0;
-        changed = true;
-    }
-    if keys.just_pressed(KeyCode::Minus)
-        || keys.just_pressed(KeyCode::NumpadSubtract)
-        || keys.just_pressed(KeyCode::Slash)
-    {
-        speed.0 -= 1.0;
-        changed = true;
-    }
-
-    if changed {
-        for mut text in &mut text_query {
-            *text = Text::new(format!(
-                "Controls:\nArrow Keys: Move/Rotate Camera\n+/-: Adjust Simulation Speed (Current: {:.1}x)",
-                speed.0
-            ));
-        }
-    }
-}
-
-fn sun_setup(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    asset_server: Res<AssetServer>,
-) {
-    let sun_texture = asset_server.load("2k_sun.jpg");
-    commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(planets::scale_sun_radius(
-            planets::SUN_EXACT_RADIUS,
-        )))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color_texture: Some(sun_texture.clone()),
-            emissive: bevy::color::LinearRgba::rgb(5.0, 5.0, 5.0),
-            emissive_texture: Some(sun_texture),
-            reflectance: 0.0,
-            ..default()
-        })),
-        Star,
-        Transform::from_translation(constants::SUN_POSITION),
-    ));
-
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 100_000.,
-
-            ..default()
-        },
-        Transform::from_translation(constants::SUN_POSITION),
-    ));
-}
-
-fn planet_setup(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    asset_server: Res<AssetServer>,
-) {
-    for p in planets::SOLAR_SYSTEM_PLANETS {
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(planets::scale_radius(p.exact_radius)))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color_texture: Some(asset_server.load(p.texture)),
-                ..default()
-            })),
-            Planet::new(p.focal, p.short_axis, p.long_axis, p.angle_start),
-            Transform::from_translation(constants::SUN_POSITION),
-        ));
-    }
 }
 
 fn background_setup(
@@ -187,39 +93,4 @@ fn background_setup(
             ));
         }
     }
-}
-
-fn orbit(
-    mut query: Query<(&mut Transform, &mut Planet)>,
-    time: Res<Time>,
-    speed: Res<SimulationSpeed>,
-) {
-    let dt = time.delta_secs();
-
-    for (mut transform, mut p) in &mut query {
-        // NOTE: This needs double checking
-        let radius = get_planet_radius(&p);
-        let h = p.short_axis / p.long_axis.sqrt();
-        let dtheta = (h / radius.powi(2)) * speed.0 * dt;
-        p.theta += dtheta;
-
-        let (x, z) = get_planet_pos(&p);
-
-        transform.translation.x = x;
-        transform.translation.z = z;
-    }
-}
-
-fn get_planet_radius(planet: &Planet) -> f32 {
-    let p = planet.short_axis.powi(2) / planet.long_axis;
-    let eps = planet.focal / planet.long_axis;
-    p / (1. + eps * planet.theta.cos())
-}
-
-fn get_planet_pos(planet: &Planet) -> (f32, f32) {
-    let r = get_planet_radius(planet);
-    let x = r * planet.theta.cos();
-    let z = r * planet.theta.sin();
-
-    (x, z)
 }
