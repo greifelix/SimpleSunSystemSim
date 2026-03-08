@@ -32,7 +32,7 @@ pub fn background_setup(
     asset_server: Res<AssetServer>,
 ) {
     let star_texture = asset_server.load("2k_stars_milky_way.jpg");
-    let space_mesh = meshes.add(Sphere::new(150.0).mesh().uv(128, 64));
+    let space_mesh = meshes.add(Sphere::new(75.0).mesh().uv(128, 64));
     let sky_material = materials.add(StandardMaterial {
         base_color_texture: Some(star_texture.clone()),
         emissive: bevy::color::LinearRgba::rgb(1.5, 1.5, 1.5),
