@@ -2,13 +2,14 @@
 
 This is a hobby project to play around with bevy and learning a little bit more about the Solar system.
 
+![Simulation preview](docs/Simulation_Preview.png)
+
 
 ## Approach
 
-- For the distances I use astronomical units
-- For the planet sizes I use the earth as a reference size - then I use scaling functions where bigger planets are scaled down more than smaller planets
+- For the distances I use astronomical units - which are than scaled non-linear
+- For the planet sizes I use the earth as a reference size - the I again used a non-linear scaling function. (Scales of planets and distances are hence not the same!)
 - I calculate the speed of the planets and the rotation using the planets circulation times around the sun.
-- The sun is scaled down even more
 - I use elliptical orbits right now. Maybe I will try to use a bevy physics engine in the future and derive
 the planet positions by the laws of physics. I use polar-coordinates (See also Online Resources TU graz, TUM, etc. etc.)
 
@@ -34,6 +35,5 @@ they are licenced under: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0
 ## Disclaimer
 
 - This does obviously not aim to be physically accurate - A lot of stuff is scaled totally wrong.
-- I will need to update the "planet speeds" they are probably not yet correct
-- I inserted the coordinates and starting positions with ai for quick prototyping.
-They are probably NOT correct. I need to double check in the futures
+- I inserted the coordinates, starting positions and circulation times with ai for quick prototyping.
+They are probably NOT correct. May need to be double checked in the future.
