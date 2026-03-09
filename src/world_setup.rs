@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::ControlText;
+use crate::{ControlText, constants_types::START_SIM_SPEED};
 
 pub fn environment_setup(mut commands: Commands) {
     commands.spawn((
@@ -14,7 +14,7 @@ pub fn environment_setup(mut commands: Commands) {
     });
 
     commands.spawn((
-        Text::new("Controls:\nArrow Keys: Move/Rotate Camera\nSpace + L/R Arrow: Rotate Up/Down\n+/-: Adjust Simulation Speed (Current: 2.00x)\n0-8: Select Focus (0=Sun, 1-8=Planets)\nTarget: Sun"),
+        Text::new(format!("Controls:\nArrow Keys: Move/Rotate Camera\nSpace + L/R Arrow: Rotate Up/Down\n+/-: Adjust Simulation Speed (Current: 1 second -> {} sim hours)\n0-8: Select Focus (0=Sun, 1-8=Planets)\nTarget: Sun",START_SIM_SPEED/3600.)),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.0),

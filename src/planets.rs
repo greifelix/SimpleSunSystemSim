@@ -61,6 +61,15 @@ pub fn scale_radius(exact_radius: f32) -> f32 {
 pub const SUN_EXACT_RADIUS: f32 = 109.2;
 pub const MOON_RADIUS: f32 = 0.1 * 0.27270444200282534; // 0.1 for scaling
 
+pub const PLANET_ORBIT_TIMES: [f32; 8] = [
+    88.0, 224.7, 365.25, 687.0, 4331.0, 10747.0, 30589.0, 59800.0,
+];
+
+pub const PLANET_ROTATION_TIMES: [f32; 8] = [58.6, -243.0, 1.0, 1.03, 0.41, 0.45, -0.72, 0.67];
+
+pub const MOON_ORBIT_TIME: f32 = 27.3;
+pub const _MOON_ROTATION_TIME: f32 = 27.3;
+
 pub const SOLAR_SYSTEM_PLANETS: &[PlanetParams] = &[
     PlanetParams {
         _name: "Mercury",
@@ -256,9 +265,10 @@ pub fn moon_orbit(
 ) {
     let moon_transform = &mut moon_query.0;
     let earth_transform = earth_query.0;
-    let dt = time.delta_secs();
+    let dt = time.delta_secs() / (3600. * 24.);
 
-    *moon_theta = (*moon_theta + dt * speed.0) % (2. * f32::consts::PI);
+    let speed_factor = speed.0 * (2. * f32::consts::PI / MOON_ORBIT_TIME);
+    *moon_theta = (*moon_theta - dt * speed_factor) % (2. * f32::consts::PI);
 
     moon_transform.translation.x = earth_transform.translation.x
         + scale_radius(constants_types::EARTH_MOON_DIST_AU) * (*moon_theta).cos();
@@ -271,13 +281,12 @@ pub fn orbit(
     time: Res<Time>,
     speed: Res<SimulationSpeed>,
 ) {
-    let dt = time.delta_secs();
+    let dt = time.delta_secs() / (3600. * 24.);
 
     for (mut transform, mut p) in &mut query {
-        let polar_radius = get_planet_polar_radius(&p);
-        let h = p.short_axis / p.long_axis.sqrt();
-        let dtheta = (h / polar_radius.powi(2)) * speed.0 * dt;
+        let dtheta = -(2. * f32::consts::PI / PLANET_ORBIT_TIMES[p.index]) * speed.0 * dt;
         p.theta += dtheta;
+        p.theta = p.theta % (2. * f32::consts::PI);
 
         let (x, z) = get_planet_cartesian_pos(&p);
 
@@ -309,8 +318,9 @@ pub fn earth_rotation(
     speed: Res<SimulationSpeed>,
     mut angle: Local<f32>,
 ) {
-    let dt = time.delta_secs();
-    *angle = (*angle + dt * speed.0) % (2. * f32::consts::PI);
+    let dt = time.delta_secs() / (3600. * 24.);
+    let speed_factor = speed.0 * (2. * f32::consts::PI / PLANET_ROTATION_TIMES[2]); // Earth is index 2
+    *angle = (*angle + dt * speed_factor) % (2. * f32::consts::PI);
     let inclination_angle = 23.44 * f32::consts::PI / 180.0;
 
     earth_query.rotation = Quat::from_rotation_x(inclination_angle)

@@ -22,8 +22,9 @@ fn update_ui_text(
 
     for mut text in text_query {
         *text = Text::new(format!(
-            "Controls:\nArrow Keys: Move/Rotate Camera\nSpace + L/R Arrow: Rotate Up/Down\n+/-: Adjust Simulation Speed (Current: {:.2}x)\n0-8: Select Focus (0=Sun, 1-8=Planets)\nTarget: {}",
-            speed, target_name
+            "Controls:\nArrow Keys: Move/Rotate Camera\nSpace + L/R Arrow: Rotate Up/Down\n+/-: Adjust Simulation Speed (Current: 1 second -> {:.2} sim hours)\n0-8: Select Focus (0=Sun, 1-8=Planets)\nTarget: {}",
+            speed / 3600.,
+            target_name
         ));
     }
 }
@@ -75,10 +76,9 @@ pub fn handle_simulation_speed(
     mut speed: ResMut<SimulationSpeed>,
     target: Res<CameraTarget>,
     mut text_query: Query<&mut Text, With<ControlText>>,
-    time: Res<Time>,
 ) {
     let mut changed_speed = false;
-    let speed_step = 1.0 * time.delta_secs();
+    let speed_step = 3600.;
 
     if keys.pressed(KeyCode::Equal)
         || keys.pressed(KeyCode::NumpadAdd)
