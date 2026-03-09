@@ -7,6 +7,7 @@ This is a hobby project to play around with bevy and learning a little bit more 
 
 - For the distances I use astronomical units
 - For the planet sizes I use the earth as a reference size - then I use scaling functions where bigger planets are scaled down more than smaller planets
+- I calculate the speed of the planets and the rotation using the planets circulation times around the sun.
 - The sun is scaled down even more
 - I use elliptical orbits right now. Maybe I will try to use a bevy physics engine in the future and derive
 the planet positions by the laws of physics. I use polar-coordinates (See also Online Resources TU graz, TUM, etc. etc.)
